@@ -18,8 +18,10 @@ class BottomControls extends StatelessWidget {
           child: new Column(
             children: <Widget>[
               new RichText(
-                text: new TextSpan(text: '', children: [
-                  new TextSpan(
+                text: new TextSpan(
+                  text: '',
+                  children: [
+                    new TextSpan(
                       text: 'Song Title\n',
                       style: new TextStyle(
                         color: Colors.white,
@@ -27,16 +29,19 @@ class BottomControls extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 4.0,
                         height: 1.5,
-                      )),
-                  new TextSpan(
+                      ),
+                    ),
+                    new TextSpan(
                       text: 'Atist Name\n',
                       style: new TextStyle(
                         color: Colors.white.withOpacity(0.75),
                         fontSize: 12.0,
                         letterSpacing: 3.0,
                         height: 1.5,
-                      ))
-                ]),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.only(top: 40.0),
