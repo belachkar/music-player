@@ -30,6 +30,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
   @override
   Widget build(BuildContext context) {
     return Audio(
@@ -40,50 +41,35 @@ class _MyHomePageState extends State<MyHomePage> {
           title: Text(''),
           backgroundColor: Colors.transparent,
           elevation: 0.0,
-          leading: new IconButton(
-            icon: new Icon(Icons.arrow_back_ios),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios),
             color: const Color(0xFFDDDDDD),
             onPressed: () {},
           ),
           actions: <Widget>[
-            new IconButton(
-              icon: new Icon(Icons.menu),
+            IconButton(
+              icon: Icon(Icons.menu),
               color: const Color(0xFFDDDDDD),
               onPressed: () {},
             ),
           ],
         ),
-        body: new Column(
+        body: Column(
           children: <Widget>[
             // Seek bar
-            new Expanded(
-              child: AudioComponent(
-                updateMe: [
-                  WatchableAudioProperties.audioPlayhead,
-                  WatchableAudioProperties.audioSeeking,
-                ],
-                playerBuilder: (BuildContext context, AudioPlayer player, Widget child) {
-                  double playbackprogress = 0.0;
-                  if(player.audioLength != null && player.position != null) {
-                    playbackprogress = player.position.inMilliseconds / player.audioLength.inMilliseconds;
-                  }
-
-                  return RadialSeekBar(
-                    seekPercent: playbackprogress,
-                  );
-                },
-              ),
+            Expanded(
+              child: new AudioRadialSeekBar(),
             ),
 
             // Visualizer
-            new Container(
+            Container(
               width: double.infinity,
               height: 125.0,
               color: Colors.blue,
             ),
 
             // Son title, artist name, and controls
-            new BottomControls(),
+            BottomControls(),
           ],
         ),
       ),
@@ -91,17 +77,60 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class RadialSeekBar extends StatefulWidget {
-  final double seekPercent;
+class AudioRadialSeekBar extends StatefulWidget {
+  @override
+  _AudioRadialSeekBarState createState() => _AudioRadialSeekBarState();
+}
 
-  RadialSeekBar({this.seekPercent = 0.0});
+class _AudioRadialSeekBarState extends State<AudioRadialSeekBar> {  
+  double _seekPercent;
+
+  @override
+  Widget build(BuildContext context) {
+    return AudioComponent(
+      updateMe: [
+        WatchableAudioProperties.audioPlayhead,
+        WatchableAudioProperties.audioSeeking,
+      ],
+      playerBuilder:
+          (BuildContext context, AudioPlayer player, Widget child) {
+        double playbackprogress = 0.0;
+        if (player.audioLength != null && player.position != null) {
+          playbackprogress = player.position.inMilliseconds /
+              player.audioLength.inMilliseconds;
+        }                  
+        _seekPercent = player.isSeeking ? _seekPercent : null;
+
+        return RadialSeekBar(
+          progress: playbackprogress,
+          seekPercent: _seekPercent,
+          onSeekRequeted: (double seekPercent) {
+            setState(() => _seekPercent = seekPercent);
+            final seekMillis =
+                (player.audioLength.inMilliseconds * seekPercent)
+                    .round();
+            player.seek(Duration(milliseconds: seekMillis));
+          },
+        );
+      },
+    );
+  }
+}
+
+class RadialSeekBar extends StatefulWidget {
+  final double progress;
+  final double seekPercent;
+  final Function(double) onSeekRequeted;
+
+  RadialSeekBar(
+      {this.progress = 0.0, this.seekPercent = 0.0, this.onSeekRequeted});
 
   @override
   _RadialSeekBarState createState() => _RadialSeekBarState();
 }
 
 class _RadialSeekBarState extends State<RadialSeekBar> {
-  double _seekPercent = 0.0;
+  double _progress = 0.0;
   PolarCoord _startDragCoord;
   double _startDragPercent;
   double _currentDragPercent;
@@ -109,18 +138,18 @@ class _RadialSeekBarState extends State<RadialSeekBar> {
   @override
   void initState() {
     super.initState();
-    _seekPercent = widget.seekPercent;
+    _progress = widget.progress;
   }
 
   @override
   void didUpdateWidget(RadialSeekBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _seekPercent = widget.seekPercent;
+    _progress = widget.progress;
   }
 
   void _onDragStart(PolarCoord coord) {
     _startDragCoord = coord;
-    _startDragPercent = _seekPercent;
+    _startDragPercent = _progress;
   }
 
   void _onDragUpdate(PolarCoord coord) {
@@ -133,8 +162,10 @@ class _RadialSeekBarState extends State<RadialSeekBar> {
   }
 
   void _onDragEnd() {
+    if (widget.onSeekRequeted != null) {
+      widget.onSeekRequeted(_currentDragPercent);
+    }
     setState(() {
-      _seekPercent = _currentDragPercent;
       _currentDragPercent = null;
       _startDragCoord = null;
       _startDragPercent = 0.0;
@@ -143,7 +174,14 @@ class _RadialSeekBarState extends State<RadialSeekBar> {
 
   @override
   Widget build(BuildContext context) {
-    return new RadialDragGestureDetector(
+    double thumbPosition = _progress;
+    if (_currentDragPercent != null) {
+      thumbPosition = _currentDragPercent;
+    } else if (widget.seekPercent != null) {
+      thumbPosition = widget.seekPercent;
+    }
+
+    return RadialDragGestureDetector(
       onRadialDragStart: _onDragStart,
       onRadialDragUpdate: _onDragUpdate,
       onRadialDragEnd: _onDragEnd,
@@ -152,20 +190,20 @@ class _RadialSeekBarState extends State<RadialSeekBar> {
         height: double.infinity,
         // color: Colors.transparent,
         color: Colors.teal,
-        child: new Center(
-          child: new Container(
+        child: Center(
+          child: Container(
             width: 140.0,
             height: 140.0,
             child: RadialProgressBar(
               trackColor: const Color(0xFFDDDDDD),
-              progressPercent: _currentDragPercent ?? _seekPercent,
+              progressPercent: _progress,
               progressColor: accentColor,
-              thumbPosition: _currentDragPercent ?? _seekPercent,
+              thumbPosition: thumbPosition,
               thumbColor: lightAccentColor,
               innerPadding: const EdgeInsets.all(10.0),
               child: ClipOval(
-                clipper: new CircleClipper(),
-                child: new Image.network(
+                clipper: CircleClipper(),
+                child: Image.network(
                   demoPlayList.songs[0].albumArtUrl,
                   fit: BoxFit.cover,
                 ),
@@ -181,8 +219,8 @@ class _RadialSeekBarState extends State<RadialSeekBar> {
 class CircleClipper extends CustomClipper<Rect> {
   @override
   Rect getClip(Size size) {
-    return new Rect.fromCircle(
-      center: new Offset(size.width / 2, size.height / 2),
+    return Rect.fromCircle(
+      center: Offset(size.width / 2, size.height / 2),
       radius: min(size.width, size.height) / 2,
     );
   }
@@ -229,8 +267,8 @@ class _RadialProgressBarState extends State<RadialProgressBar> {
   Widget build(BuildContext context) {
     return Padding(
       padding: widget.outerPadding,
-      child: new CustomPaint(
-        foregroundPainter: new RadialSeekBarPainter(
+      child: CustomPaint(
+        foregroundPainter: RadialSeekBarPainter(
             trackWidth: widget.trackWidth,
             trackColor: widget.trackColor,
             progressWidth: widget.progressWidth,
@@ -253,7 +291,7 @@ class _RadialProgressBarState extends State<RadialProgressBar> {
     // so we only need to account the thikness outside the track, not inside.
     final outerThikness =
         max(widget.trackWidth, max(widget.trackWidth, widget.thumbSize)) / 2;
-    return new EdgeInsets.all(outerThikness);
+    return EdgeInsets.all(outerThikness);
   }
 }
 
@@ -276,16 +314,16 @@ class RadialSeekBarPainter extends CustomPainter {
       @required this.thumbSize,
       @required thumbColor,
       @required this.thumbPosition})
-      : trackPaint = new Paint()
+      : trackPaint = Paint()
           ..color = trackColor
           ..style = PaintingStyle.stroke
           ..strokeWidth = trackWidth,
-        progressPaint = new Paint()
+        progressPaint = Paint()
           ..color = progressColor
           ..style = PaintingStyle.stroke
           ..strokeWidth = progressWidth
           ..strokeCap = StrokeCap.round,
-        thumbPaint = new Paint()
+        thumbPaint = Paint()
           ..color = thumbColor
           ..style = PaintingStyle.fill;
 
@@ -294,26 +332,26 @@ class RadialSeekBarPainter extends CustomPainter {
     final outerThickness = max(trackWidth, max(progressWidth, thumbSize));
 
     // To not exeed the border of the container
-    Size constrainedSize = new Size(
+    Size constrainedSize = Size(
       size.width - outerThickness,
       size.height - outerThickness,
     );
 
     // Track params
-    final center = new Offset(size.width / 2, size.height / 2);
+    final center = Offset(size.width / 2, size.height / 2);
     final radius = min(constrainedSize.width, constrainedSize.height) / 2;
 
     // Progress prams
     final startAngle = -pi / 2;
     final sweepAngle = pi * 2 * progressPercent;
-    final bounds = new Rect.fromCircle(center: center, radius: radius);
+    final bounds = Rect.fromCircle(center: center, radius: radius);
 
     // Thumb params
     final thumbRadius = thumbSize / 2.0;
     final thumbAngle = 2 * pi * thumbPosition - (pi / 2);
     final thumbX = cos(thumbAngle) * radius;
     final thumbY = sin(thumbAngle) * radius;
-    final thumbCenter = new Offset(thumbX, thumbY) + center;
+    final thumbCenter = Offset(thumbX, thumbY) + center;
 
     // Paint track
     canvas.drawCircle(center, radius, trackPaint);
