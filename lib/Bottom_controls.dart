@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttery_audio/fluttery_audio.dart';
+import 'package:music_player/songs.dart';
 import 'package:music_player/theme.dart';
 
 class BottomControls extends StatelessWidget {
@@ -14,31 +15,39 @@ class BottomControls extends StatelessWidget {
           padding: const EdgeInsets.only(top: 40.0, bottom: 50.0),
           child: Column(
             children: <Widget>[
-              RichText(
-                text: TextSpan(
-                  text: '',
-                  children: [
-                    TextSpan(
-                      text: 'Song Title\n',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14.0,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 4.0,
-                        height: 1.5,
-                      ),
+              AudioPlaylistComponent(
+                playlistBuilder:
+                    (BuildContext context, Playlist playlist, Widget child) {
+                      final String songTitle = demoPlayList.songs[playlist.activeIndex].songTitle;
+                      final String artistName = demoPlayList.songs[playlist.activeIndex].artist;
+                  return RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      text: '',
+                      children: [
+                        TextSpan(
+                          text: '${songTitle.toUpperCase()}\n',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 4.0,
+                            height: 1.5,
+                          ),
+                        ),
+                        TextSpan(
+                          text: artistName.toUpperCase(),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.75),
+                            fontSize: 12.0,
+                            letterSpacing: 3.0,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
                     ),
-                    TextSpan(
-                      text: 'Atist Name\n',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.75),
-                        fontSize: 12.0,
-                        letterSpacing: 3.0,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
               Padding(
                 padding: const EdgeInsets.only(top: 40.0),
