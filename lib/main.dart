@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fluttery/gestures.dart';
+import 'package:fluttery_audio/fluttery_audio.dart';
 
 import 'theme.dart';
 import 'songs.dart';
@@ -31,41 +32,60 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(''),
-        backgroundColor: Colors.transparent,
-        elevation: 0.0,
-        leading: new IconButton(
-          icon: new Icon(Icons.arrow_back_ios),
-          color: const Color(0xFFDDDDDD),
-          onPressed: () {},
-        ),
-        actions: <Widget>[
-          new IconButton(
-            icon: new Icon(Icons.menu),
+    return Audio(
+      audioUrl: demoPlayList.songs[0].audioUrl,
+      playbackState: PlaybackState.paused,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(''),
+          backgroundColor: Colors.transparent,
+          elevation: 0.0,
+          leading: new IconButton(
+            icon: new Icon(Icons.arrow_back_ios),
             color: const Color(0xFFDDDDDD),
             onPressed: () {},
           ),
-        ],
-      ),
-      body: new Column(
-        children: <Widget>[
-          // Seek bar
-          new Expanded(
-            child: new RadialSeekBar(),
-          ),
+          actions: <Widget>[
+            new IconButton(
+              icon: new Icon(Icons.menu),
+              color: const Color(0xFFDDDDDD),
+              onPressed: () {},
+            ),
+          ],
+        ),
+        body: new Column(
+          children: <Widget>[
+            // Seek bar
+            new Expanded(
+              child: AudioComponent(
+                updateMe: [
+                  WatchableAudioProperties.audioPlayhead,
+                  WatchableAudioProperties.audioSeeking,
+                ],
+                playerBuilder: (BuildContext context, AudioPlayer player, Widget child) {
+                  double playbackprogress = 0.0;
+                  if(player.audioLength != null && player.position != null) {
+                    playbackprogress = player.position.inMilliseconds / player.audioLength.inMilliseconds;
+                  }
 
-          // Visualizer
-          new Container(
-            width: double.infinity,
-            height: 125.0,
-            color: Colors.blue,
-          ),
+                  return RadialSeekBar(
+                    seekPercent: playbackprogress,
+                  );
+                },
+              ),
+            ),
 
-          // Son title, artist name, and controls
-          new BottomControls(),
-        ],
+            // Visualizer
+            new Container(
+              width: double.infinity,
+              height: 125.0,
+              color: Colors.blue,
+            ),
+
+            // Son title, artist name, and controls
+            new BottomControls(),
+          ],
+        ),
       ),
     );
   }
