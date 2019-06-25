@@ -72,7 +72,6 @@ class _MyHomePageState extends State<MyHomePage> {
             Container(
               width: double.infinity,
               height: 125.0,
-              color: Colors.blue,
             ),
 
             // Son title, artist name, and controls
@@ -208,8 +207,7 @@ class _RadialSeekBarState extends State<RadialSeekBar> {
       child: Container(
         width: double.infinity,
         height: double.infinity,
-        // color: Colors.transparent,
-        color: Colors.teal,
+        color: Colors.transparent,
         child: Center(
           child: Container(
             width: 140.0,
